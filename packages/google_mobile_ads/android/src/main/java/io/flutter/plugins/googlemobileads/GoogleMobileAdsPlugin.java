@@ -24,6 +24,7 @@ import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.OnAdInspectorClosedListener;
 import com.google.android.gms.ads.RequestConfiguration;
+import com.google.android.gms.ads.VideoController;
 import com.google.android.gms.ads.initialization.InitializationStatus;
 import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
 import com.google.android.gms.ads.nativead.NativeAd;
@@ -642,6 +643,173 @@ public class GoogleMobileAdsPlugin implements FlutterPlugin, ActivityAware, Meth
           result.success(null);
           break;
         }
+      case "isNativeAdCustomControlsEnabled":
+      {
+        final FlutterAd ad = instanceManager.adForId(call.<Integer>argument("adId"));
+        final FlutterNativeAd nativeAd1 = ad instanceof FlutterNativeAd ? (FlutterNativeAd) ad : null;
+        if (nativeAd1 == null) {
+          result.error(
+                  Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
+                  "Unexpected ad type for getAdSize: " + ad,
+                  null);
+        } else {
+          result.success(nativeAd1.isCustomControlsEnabled());
+        }
+        break;
+      }
+      case "nativeAdPlaybackPlay":
+      {
+        final FlutterAd ad = instanceManager.adForId(call.<Integer>argument("adId"));
+        final FlutterNativeAd nativeAd1 = ad instanceof FlutterNativeAd ? (FlutterNativeAd) ad : null;
+        if (nativeAd1 == null) {
+          result.error(
+                  Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
+                  "Unexpected ad type for getAdSize: " + ad,
+                  null);
+        } else {
+          final VideoController videoController = nativeAd1.getVideoController();
+          if (videoController == null) {
+            result.error(
+                    Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
+                    "Video controller is null",
+                    null);
+          } else {
+            videoController.play();
+            result.success(null);
+          }
+        }
+        break;
+      }
+      case "nativeAdPlaybackPause":
+      {
+        final FlutterAd ad = instanceManager.adForId(call.<Integer>argument("adId"));
+        final FlutterNativeAd nativeAd1 = ad instanceof FlutterNativeAd ? (FlutterNativeAd) ad : null;
+        if (nativeAd1 == null) {
+          result.error(
+                  Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
+                  "Unexpected ad type for getAdSize: " + ad,
+                  null);
+        } else {
+          final VideoController videoController = nativeAd1.getVideoController();
+          if (videoController == null) {
+            result.error(
+                    Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
+                    "Video controller is null",
+                    null);
+          } else {
+            videoController.pause();
+            result.success(null);
+          }
+        }
+        break;
+      }
+      case "nativeAdPlaybackStop":
+      {
+        final FlutterAd ad = instanceManager.adForId(call.<Integer>argument("adId"));
+        final FlutterNativeAd nativeAd1 = ad instanceof FlutterNativeAd ? (FlutterNativeAd) ad : null;
+        if (nativeAd1 == null) {
+          result.error(
+                  Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
+                  "Unexpected ad type for getAdSize: " + ad,
+                  null);
+        } else {
+          final VideoController videoController = nativeAd1.getVideoController();
+          if (videoController == null) {
+            result.error(
+                    Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
+                    "Video controller is null",
+                    null);
+          } else {
+            videoController.stop();
+            result.success(null);
+          }
+        }
+        break;
+      }
+      case "getNativeAdPlaybackState":
+      {
+        final FlutterAd ad = instanceManager.adForId(call.<Integer>argument("adId"));
+        final FlutterNativeAd nativeAd1 = ad instanceof FlutterNativeAd ? (FlutterNativeAd) ad : null;
+        if (nativeAd1 == null) {
+          result.error(
+                  Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
+                  "Unexpected ad type for getAdSize: " + ad,
+                  null);
+        } else {
+          final VideoController videoController = nativeAd1.getVideoController();
+          if (videoController == null) {
+            result.error(
+                    Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
+                    "Video controller is null",
+                    null);
+          } else {
+            final int playbackState = videoController.getPlaybackState();
+            result.success(playbackState);
+          }
+        }
+        break;
+      }
+      case "nativeAdMute":
+      {
+        final FlutterAd ad = instanceManager.adForId(call.<Integer>argument("adId"));
+        final FlutterNativeAd nativeAd1 = ad instanceof FlutterNativeAd ? (FlutterNativeAd) ad : null;
+        if (nativeAd1 == null) {
+          result.error(
+                  Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
+                  "Unexpected ad type for getAdSize: " + ad,
+                  null);
+        } else {
+          final VideoController videoController = nativeAd1.getVideoController();
+          if (videoController == null) {
+            result.error(
+                    Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
+                    "Video controller is null",
+                    null);
+          } else {
+            videoController.mute(call.<Boolean>argument("mute"));
+            result.success(null);
+          }
+        }
+        break;
+      }
+      case "isNativeAdPlaybackMuted":
+      {
+        final FlutterAd ad = instanceManager.adForId(call.<Integer>argument("adId"));
+        final FlutterNativeAd nativeAd1 = ad instanceof FlutterNativeAd ? (FlutterNativeAd) ad : null;
+        if (nativeAd1 == null) {
+          result.error(
+                  Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
+                  "Unexpected ad type for getAdSize: " + ad,
+                  null);
+        } else {
+          final VideoController videoController = nativeAd1.getVideoController();
+          if (videoController == null) {
+            result.error(
+                    Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
+                    "Video controller is null",
+                    null);
+          } else {
+            final boolean isMuted = videoController.isMuted();
+            result.success(isMuted);
+          }
+        }
+        break;
+      }
+      case "hasNativeAdVideoContent":
+      {
+        final FlutterAd ad = instanceManager.adForId(call.<Integer>argument("adId"));
+        final FlutterNativeAd nativeAd1 = ad instanceof FlutterNativeAd ? (FlutterNativeAd) ad : null;
+        if (nativeAd1 == null) {
+          result.error(
+                  Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
+                  "Unexpected ad type for getAdSize: " + ad,
+                  null);
+        } else {
+          final boolean hasVideoContent = nativeAd1.hasVideoContent();
+          result.success(hasVideoContent);
+        }
+        break;
+      }
       default:
         result.notImplemented();
     }

@@ -829,6 +829,76 @@ class AdInstanceManager {
       listener(error);
     }
   }
+
+  Future<void> hasVideoContent(final NativeAd ad) async {
+    await channel.invokeMethod<void>(
+      'hasNativeAdVideoContent',
+      <dynamic, dynamic>{
+        'adId': adIdFor(ad),
+      },
+    );
+  }
+
+  Future<bool?> isCustomControlsEnabled(final NativeAd ad) async =>
+      await channel.invokeMethod<void>(
+        'isNativeAdCustomControlsEnabled',
+        <dynamic, dynamic>{
+          'adId': adIdFor(ad),
+        },
+      ) as bool?;
+
+  Future<bool?> isPlaybackMuted(final NativeAd ad) async =>
+      await channel.invokeMethod<void>(
+        'isNativeAdPlaybackMuted',
+        <dynamic, dynamic>{
+          'adId': adIdFor(ad),
+        },
+      ) as bool?;
+
+  Future<void> mute(final NativeAd ad, final bool mute) async {
+    await channel.invokeMethod<void>(
+      'nativeAdMute',
+      <dynamic, dynamic>{
+        'adId': adIdFor(ad),
+        'mute': mute,
+      },
+    );
+  }
+
+  Future<void> play(final NativeAd ad) async {
+    await channel.invokeMethod<void>(
+      'nativeAdPlaybackPlay',
+      <dynamic, dynamic>{
+        'adId': adIdFor(ad),
+      },
+    );
+  }
+
+  Future<void> pause(final NativeAd ad) async {
+    await channel.invokeMethod<void>(
+      'nativeAdPlaybackPause',
+      <dynamic, dynamic>{
+        'adId': adIdFor(ad),
+      },
+    );
+  }
+
+  Future<void> stop(final NativeAd ad) async {
+    await channel.invokeMethod<void>(
+      'nativeAdPlaybackStop',
+      <dynamic, dynamic>{
+        'adId': adIdFor(ad),
+      },
+    );
+  }
+
+  Future<int?> getPlaybackState(final NativeAd ad) async =>
+      await channel.invokeMethod<void>(
+        'getNativeAdPlaybackState',
+        <dynamic, dynamic>{
+          'adId': adIdFor(ad),
+        },
+      ) as int?;
 }
 
 @visibleForTesting

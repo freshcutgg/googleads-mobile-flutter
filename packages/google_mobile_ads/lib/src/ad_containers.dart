@@ -947,6 +947,71 @@ class AdManagerBannerAd extends AdWithView {
   }
 }
 
+/// An object that provides playback control for [NativeAd] video ads.
+abstract class VideoController {
+  /// Playback state is unknown.
+  static const playbackStateUnknown = 0;
+
+  /// Video playback is in progress.
+  static const playbackStatePlaying = 1;
+
+  /// Video playback is paused.
+  static const playbackStatePaused = 2;
+
+  /// Video playback is ended.
+  static const playbackStateEnded = 3;
+
+  /// Video playback is ready to play, stopped.
+  static const playbackStateReady = 5;
+
+  /// Returns true if the video ad is using custom player controls. If custom
+  /// player controls are used, then it is the app's responsibility to render
+  /// provide play/pause and mute/unmute controls and call play(), pause(),
+  /// and mute(boolean) at the appropriate times.
+  Future<bool> get isCustomControlsEnabled;
+
+  /// Returns true if the video is currently muted, false otherwise.
+  Future<bool> get isMuted;
+
+  /// see `playbackState*` constants in this class.
+  Future<int> get playbackState;
+
+  /// Returns true if the current ad has video content.
+  Future<void> hasVideoContent();
+
+  /// Sets the video mute state.
+  /// This video control method only works when [isCustomControlsEnabled]
+  /// returns true.
+  /// `mute` - `true` if video should be muted, `false` for un-muted.
+  Future<void> mute(bool mute);
+
+  /// Play the video ad if applicable. This method is a no-op if the video is
+  /// already playing or the video has ended.
+  /// This video control method only works when [isCustomControlsEnabled]
+  /// returns true.
+  Future<void> play();
+
+  /// Pauses the video ad if applicable. This method is a no-op if the video is
+  /// already paused or the video has ended.
+  /// This video control method only works when [isCustomControlsEnabled]
+  /// returns true.
+  Future<void> pause();
+
+  /// Stops video playback. Subsequent calls to play() will resume at the
+  /// beginning of the video. This method is a no-op if the video has already
+  /// been stopped.
+  /// The ad unit must be in the allow list to be able to use this api. If you
+  /// are interested in using this feature, reach out to your account manager.
+  Future<void> stop();
+}
+
+extension VideoControllerX on VideoController {
+  Future<bool> get isPlaying => playbackState.then((state) => state == VideoController.playbackStatePlaying);
+  Future<bool> get isPaused => playbackState.then((state) => state == VideoController.playbackStatePaused);
+  Future<bool> get isEnded => playbackState.then((state) => state == VideoController.playbackStateEnded);
+  Future<bool> get isReady => playbackState.then((state) => state == VideoController.playbackStateReady);
+}
+
 /// A NativeAd.
 ///
 /// Native ads are ad assets that are presented to users via UI components that
@@ -967,7 +1032,7 @@ class AdManagerBannerAd extends AdWithView {
 ///
 /// To display this ad, instantiate an [AdWidget] with this as a parameter after
 /// calling [load].
-class NativeAd extends AdWithView {
+class NativeAd extends AdWithView implements VideoController {
   /// Creates a [NativeAd].
   ///
   /// A valid [adUnitId], nonnull [listener], nonnull [request], and either
@@ -1035,8 +1100,45 @@ class NativeAd extends AdWithView {
   final NativeTemplateStyle? nativeTemplateStyle;
 
   @override
+  Future<bool> get isCustomControlsEnabled async =>
+      await instanceManager.isCustomControlsEnabled(this) ?? false;
+
+  @override
+  Future<bool> get isMuted async =>
+      await instanceManager.isPlaybackMuted(this) ?? false;
+
+  @override
+  Future<int> get playbackState async =>
+      await instanceManager.getPlaybackState(this) ?? 0;
+
+  @override
   Future<void> load() async {
     await instanceManager.loadNativeAd(this);
+  }
+
+  @override
+  Future<void> mute(final bool mute) async {
+    await instanceManager.mute(this, mute);
+  }
+
+  @override
+  Future<void> play() async {
+    await instanceManager.play(this);
+  }
+
+  @override
+  Future<void> pause() async {
+    return await instanceManager.pause(this);
+  }
+
+  @override
+  Future<void> stop() async {
+    await instanceManager.stop(this);
+  }
+
+  @override
+  Future<void> hasVideoContent() async {
+    await instanceManager.hasVideoContent(this);
   }
 }
 

@@ -20,6 +20,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.ads.nativetemplates.TemplateView;
 import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.MediaContent;
+import com.google.android.gms.ads.VideoController;
 import com.google.android.gms.ads.admanager.AdManagerAdRequest;
 import com.google.android.gms.ads.nativead.NativeAd;
 import com.google.android.gms.ads.nativead.NativeAd.OnNativeAdLoadedListener;
@@ -43,6 +45,7 @@ class FlutterNativeAd extends FlutterAd {
   @Nullable private FlutterAdManagerAdRequest adManagerRequest;
   @Nullable private Map<String, Object> customOptions;
   @Nullable private NativeAdView nativeAdView;
+  @Nullable private NativeAd nativeAd;
   @Nullable private final FlutterNativeAdOptions nativeAdOptions;
   @Nullable private final FlutterNativeTemplateStyle nativeTemplateStyle;
   @Nullable private TemplateView templateView;
@@ -215,6 +218,13 @@ class FlutterNativeAd extends FlutterAd {
     this.nativeTemplateStyle = nativeTemplateStyle;
   }
 
+  boolean isCustomControlsEnabled() {
+    return nativeAdOptions != null && nativeAdOptions.videoOptions != null
+            && nativeAdOptions.videoOptions.customControlsRequested != null
+        ? nativeAdOptions.videoOptions.customControlsRequested
+        : false;
+  }
+
   @Override
   void load() {
     final OnNativeAdLoadedListener loadedListener = new FlutterNativeAdLoadedListener(this);
@@ -256,7 +266,31 @@ class FlutterNativeAd extends FlutterAd {
       nativeAdView = adFactory.createNativeAd(nativeAd, customOptions);
     }
     nativeAd.setOnPaidEventListener(new FlutterPaidEventListener(manager, this));
+    this.nativeAd = nativeAd;
     manager.onAdLoaded(adId, nativeAd.getResponseInfo());
+  }
+
+  boolean hasVideoContent() {
+    if (nativeAd == null) {
+      return false;
+    }
+    final MediaContent mediaContent = nativeAd.getMediaContent();
+    if (mediaContent == null) {
+      return false;
+    }
+    return mediaContent.hasVideoContent();
+
+  }
+  @Nullable
+  VideoController getVideoController() {
+    if (nativeAd == null) {
+      return null;
+    }
+    final MediaContent mediaContent = nativeAd.getMediaContent();
+    if (mediaContent == null) {
+      return null;
+    }
+    return mediaContent.getVideoController();
   }
 
   @Override
@@ -269,5 +303,6 @@ class FlutterNativeAd extends FlutterAd {
       templateView.destroyNativeAd();
       templateView = null;
     }
+    nativeAd = null;
   }
 }
