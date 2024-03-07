@@ -19,16 +19,24 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+
 import com.google.android.gms.ads.AdInspectorError;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.OnAdInspectorClosedListener;
 import com.google.android.gms.ads.RequestConfiguration;
 import com.google.android.gms.ads.VideoController;
+import com.google.android.gms.ads.VideoController.VideoLifecycleCallbacks;
 import com.google.android.gms.ads.initialization.InitializationStatus;
 import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
 import com.google.android.gms.ads.nativead.NativeAd;
 import com.google.android.gms.ads.nativead.NativeAdView;
+
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
@@ -39,12 +47,9 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.StandardMethodCodec;
 import io.flutter.plugins.googlemobileads.FlutterAd.FlutterOverlayAd;
+import io.flutter.plugins.googlemobileads.FlutterNativeAd.VideoLifecycleEvent;
 import io.flutter.plugins.googlemobileads.nativetemplates.FlutterNativeTemplateStyle;
 import io.flutter.plugins.googlemobileads.usermessagingplatform.UserMessagingPlatformManager;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Flutter plugin accessing Google Mobile Ads API.
@@ -426,6 +431,54 @@ public class GoogleMobileAdsPlugin implements FlutterPlugin, ActivityAware, Meth
                 .build();
         instanceManager.trackAd(nativeAd, call.<Integer>argument("adId"));
         nativeAd.load();
+        nativeAd.setVideoLifecycleCallback(
+            new VideoLifecycleCallbacks() {
+              @Override
+              public void onVideoStart() {
+                final Map<Object, Object> args = new HashMap<>();
+                args.put("adId", nativeAd.adId);
+                args.put("eventName", VideoLifecycleEvent.VIDEO_START.value);
+                Log.d(TAG, "onVideoStart: " + args);
+                instanceManager.onNativePlaybackAdEvent(args);
+              }
+
+              @Override
+              public void onVideoPlay() {
+                final Map<Object, Object> args = new HashMap<>();
+                args.put("adId", nativeAd.adId);
+                args.put("eventName", VideoLifecycleEvent.VIDEO_PLAY.value);
+                Log.d(TAG, "onVideoPlay: " + args);
+                instanceManager.onNativePlaybackAdEvent(args);
+              }
+
+              @Override
+              public void onVideoPause() {
+                final Map<Object, Object> args = new HashMap<>();
+                args.put("adId", nativeAd.adId);
+                args.put("eventName", VideoLifecycleEvent.VIDEO_PAUSE.value);
+                Log.d(TAG, "onVideoPause: " + args);
+                instanceManager.onNativePlaybackAdEvent(args);
+              }
+
+              @Override
+              public void onVideoEnd() {
+                final Map<Object, Object> args = new HashMap<>();
+                args.put("adId", nativeAd.adId);
+                args.put("eventName", VideoLifecycleEvent.VIDEO_END.value);
+                Log.d(TAG, "onVideoEnd: " + args);
+                instanceManager.onNativePlaybackAdEvent(args);
+              }
+
+              @Override
+              public void onVideoMute(final boolean isMuted) {
+                final Map<Object, Object> args = new HashMap<>();
+                args.put("adId", nativeAd.adId);
+                args.put("eventName", isMuted ? VideoLifecycleEvent.VIDEO_MUTE.value
+                        : VideoLifecycleEvent.VIDEO_UNMUTE.value);
+                Log.d(TAG, "onVideoMute: " + args);
+                instanceManager.onNativePlaybackAdEvent(args);
+              }
+            });
         result.success(null);
         break;
       case "loadInterstitialAd":

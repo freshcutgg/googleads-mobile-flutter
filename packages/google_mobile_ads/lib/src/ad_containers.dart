@@ -977,7 +977,10 @@ abstract class VideoController {
   Future<int> get playbackState;
 
   /// Returns true if the current ad has video content.
-  Future<void> hasVideoContent();
+  Future<bool> get hasVideoContent;
+
+  /// Stream of video playback events.
+  Stream<NativeAdVideoEvent> get adVideoEventStream;
 
   /// Sets the video mute state.
   /// This video control method only works when [isCustomControlsEnabled]
@@ -1005,11 +1008,91 @@ abstract class VideoController {
   Future<void> stop();
 }
 
+/// Convenient utils for [VideoController].
 extension VideoControllerX on VideoController {
-  Future<bool> get isPlaying => playbackState.then((state) => state == VideoController.playbackStatePlaying);
-  Future<bool> get isPaused => playbackState.then((state) => state == VideoController.playbackStatePaused);
-  Future<bool> get isEnded => playbackState.then((state) => state == VideoController.playbackStateEnded);
-  Future<bool> get isReady => playbackState.then((state) => state == VideoController.playbackStateReady);
+  /// Returns true if the video is currently playing, false otherwise.
+  Future<bool> get isPlaying => playbackState
+      .then((state) => state == VideoController.playbackStatePlaying);
+
+  /// Returns true if the video is currently paused, false otherwise.
+  Future<bool> get isPaused => playbackState
+      .then((state) => state == VideoController.playbackStatePaused);
+
+  /// Returns true if the video has ended, false otherwise.
+  Future<bool> get isEnded => playbackState
+      .then((state) => state == VideoController.playbackStateEnded);
+
+  /// Returns true if the video is ready to play, false otherwise.
+  Future<bool> get isReady => playbackState
+      .then((state) => state == VideoController.playbackStateReady);
+}
+
+/// Represents video playback events for a [NativeAd], emitted by
+/// `VideoLifecycleCallbacks` on the platform side.
+enum NativeAdVideoEvent {
+  /// Corresponds to `VideoLifecycleCallbacks.onVideoStart` on native platforms.
+  start,
+
+  /// Corresponds to `VideoLifecycleCallbacks.onVideoPlay` on native platforms.
+  play,
+
+  /// Corresponds to `VideoLifecycleCallbacks.onVideoPause` on native platforms.
+  pause,
+
+  /// Corresponds to `VideoLifecycleCallbacks.onVideoEnd` on native platforms.
+  end,
+
+  /// Corresponds to `VideoLifecycleCallbacks.onVideoMute` (true) on native
+  /// platforms.
+  mute,
+
+  /// Corresponds to `VideoLifecycleCallbacks.onVideoMute` (false) on native
+  /// platforms.
+  unmute,
+}
+
+/// Utility class for converting between [NativeAdVideoEvent] and its
+/// corresponding int value.
+abstract class AdVideoEventUtil {
+  /// Converts a [NativeAdVideoEvent] to its corresponding int value.
+  static String toValue(final NativeAdVideoEvent event) {
+    switch (event) {
+      case NativeAdVideoEvent.start:
+        return 'videoStart';
+      case NativeAdVideoEvent.play:
+        return 'videoPlay';
+      case NativeAdVideoEvent.pause:
+        return 'videoPause';
+      case NativeAdVideoEvent.end:
+        return 'videoEnd';
+      case NativeAdVideoEvent.mute:
+        return 'videoMute';
+      case NativeAdVideoEvent.unmute:
+        return 'videoUnmute';
+      default:
+        throw ArgumentError('Unknown AdVideoEvent value: $event');
+    }
+  }
+
+  /// Converts an int value to its corresponding [NativeAdVideoEvent].
+  static NativeAdVideoEvent fromValue(final String value) {
+    switch (value) {
+      case 'videoStart':
+        return NativeAdVideoEvent.start;
+      case 'videoPlay':
+        return NativeAdVideoEvent.play;
+      case 'videoPause':
+        return NativeAdVideoEvent.pause;
+      case 'videoEnd':
+        return NativeAdVideoEvent.end;
+      case 'videoMute':
+        return NativeAdVideoEvent.mute;
+      case 'videoUnmute':
+        return NativeAdVideoEvent.unmute;
+      default:
+        throw ArgumentError('Unknown AdVideoEvent value: $value');
+    }
+  }
 }
 
 /// A NativeAd.
@@ -1099,6 +1182,11 @@ class NativeAd extends AdWithView implements VideoController {
   /// used to render the native ad.
   final NativeTemplateStyle? nativeTemplateStyle;
 
+  StreamSubscription<NativeAdVideoEvent>? _videoEventSubscription;
+
+  final StreamController<NativeAdVideoEvent> _videoEventController =
+      StreamController<NativeAdVideoEvent>.broadcast();
+
   @override
   Future<bool> get isCustomControlsEnabled async =>
       await instanceManager.isCustomControlsEnabled(this) ?? false;
@@ -1112,8 +1200,33 @@ class NativeAd extends AdWithView implements VideoController {
       await instanceManager.getPlaybackState(this) ?? 0;
 
   @override
+  Future<bool> get hasVideoContent async {
+    return await instanceManager.hasVideoContent(this) ?? false;
+  }
+
+  @override
+  Stream<NativeAdVideoEvent> get adVideoEventStream =>
+      _videoEventController.stream.map((event) {
+        print('Received video event: $event');
+        return event;
+      });
+
+  @override
+  Future<void> dispose() async {
+    await Future.wait(
+      [
+        _videoEventSubscription?.cancel() ?? Future.value(),
+        _videoEventController.close(),
+        super.dispose(),
+      ],
+    );
+  }
+
+  @override
   Future<void> load() async {
-    await instanceManager.loadNativeAd(this);
+    final task = instanceManager.loadNativeAd(this);
+    _init();
+    await task;
   }
 
   @override
@@ -1136,9 +1249,17 @@ class NativeAd extends AdWithView implements VideoController {
     await instanceManager.stop(this);
   }
 
-  @override
-  Future<void> hasVideoContent() async {
-    await instanceManager.hasVideoContent(this);
+  void _init() {
+    _videoEventSubscription =
+        instanceManager.listenNativeAdVideoEvent(this).listen((event) {
+      if (!_videoEventController.isClosed) {
+        _videoEventController.add(event);
+      }
+    }, onError: (Object error, StackTrace stackTrace) {
+      if (!_videoEventController.isClosed) {
+        _videoEventController.addError(error, stackTrace);
+      }
+    });
   }
 }
 

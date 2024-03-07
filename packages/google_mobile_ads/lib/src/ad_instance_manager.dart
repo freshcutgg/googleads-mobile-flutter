@@ -73,6 +73,8 @@ class AdInstanceManager {
   /// Invokes load and dispose calls.
   final MethodChannel channel;
   final WebViewControllerUtil webViewControllerUtil;
+  final StreamController<Map<dynamic, dynamic>>
+      nativeAdVideoEventStreamController = StreamController.broadcast();
 
   void _onAdEvent(Ad ad, String eventName, Map<dynamic, dynamic> arguments) {
     if (defaultTargetPlatform == TargetPlatform.android) {
@@ -156,6 +158,24 @@ class AdInstanceManager {
       case 'onFluidAdHeightChanged':
         _invokeFluidAdHeightChanged(ad, arguments);
         break;
+      case 'videoStart':
+        nativeAdVideoEventStreamController.add(arguments);
+        break;
+      case 'videoPlay':
+        nativeAdVideoEventStreamController.add(arguments);
+        break;
+      case 'videoPause':
+        nativeAdVideoEventStreamController.add(arguments);
+        break;
+      case 'videoEnd':
+        nativeAdVideoEventStreamController.add(arguments);
+        break;
+      case 'videoMute':
+        nativeAdVideoEventStreamController.add(arguments);
+        break;
+      case 'videoUnmute':
+        nativeAdVideoEventStreamController.add(arguments);
+        break;
       default:
         debugPrint('invalid ad event name: $eventName');
     }
@@ -203,6 +223,24 @@ class AdInstanceManager {
         break;
       case 'onAdClicked':
         _invokeOnAdClicked(ad, eventName);
+        break;
+      case 'videoStart':
+        nativeAdVideoEventStreamController.add(arguments);
+        break;
+      case 'videoPlay':
+        nativeAdVideoEventStreamController.add(arguments);
+        break;
+      case 'videoPause':
+        nativeAdVideoEventStreamController.add(arguments);
+        break;
+      case 'videoEnd':
+        nativeAdVideoEventStreamController.add(arguments);
+        break;
+      case 'videoMute':
+        nativeAdVideoEventStreamController.add(arguments);
+        break;
+      case 'videoUnmute':
+        nativeAdVideoEventStreamController.add(arguments);
         break;
       default:
         debugPrint('invalid ad event name: $eventName');
@@ -830,13 +868,13 @@ class AdInstanceManager {
     }
   }
 
-  Future<void> hasVideoContent(final NativeAd ad) async {
-    await channel.invokeMethod<void>(
+  Future<bool?> hasVideoContent(final NativeAd ad) async {
+    return await channel.invokeMethod<void>(
       'hasNativeAdVideoContent',
       <dynamic, dynamic>{
         'adId': adIdFor(ad),
       },
-    );
+    ) as bool?;
   }
 
   Future<bool?> isCustomControlsEnabled(final NativeAd ad) async =>
@@ -899,6 +937,19 @@ class AdInstanceManager {
           'adId': adIdFor(ad),
         },
       ) as int?;
+
+  Stream<NativeAdVideoEvent> listenNativeAdVideoEvent(final NativeAd ad) =>
+      nativeAdVideoEventStreamController.stream
+          .where((event) =>
+              event['adId'] == adIdFor(ad) &&
+              event['eventName'] != null &&
+              event['eventName'] is String)
+          .map<NativeAdVideoEvent>((event) =>
+              AdVideoEventUtil.fromValue(event['eventName'] as String))
+          .map((dynamic event) {
+        print('Received event: $event');
+        return event;
+      });
 }
 
 @visibleForTesting

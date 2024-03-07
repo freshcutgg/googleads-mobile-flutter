@@ -18,20 +18,24 @@ import android.content.Context;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.google.android.ads.nativetemplates.TemplateView;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.MediaContent;
 import com.google.android.gms.ads.VideoController;
+import com.google.android.gms.ads.VideoController.VideoLifecycleCallbacks;
 import com.google.android.gms.ads.admanager.AdManagerAdRequest;
 import com.google.android.gms.ads.nativead.NativeAd;
 import com.google.android.gms.ads.nativead.NativeAd.OnNativeAdLoadedListener;
 import com.google.android.gms.ads.nativead.NativeAdOptions;
 import com.google.android.gms.ads.nativead.NativeAdView;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+
+import java.util.Map;
+
 import io.flutter.plugin.platform.PlatformView;
 import io.flutter.plugins.googlemobileads.GoogleMobileAdsPlugin.NativeAdFactory;
 import io.flutter.plugins.googlemobileads.nativetemplates.FlutterNativeTemplateStyle;
-import java.util.Map;
 
 /** A wrapper for {@link NativeAd}. */
 class FlutterNativeAd extends FlutterAd {
@@ -50,6 +54,8 @@ class FlutterNativeAd extends FlutterAd {
   @Nullable private final FlutterNativeTemplateStyle nativeTemplateStyle;
   @Nullable private TemplateView templateView;
   @NonNull private final Context context;
+  @NonNull private final VideoLifecycleCallbacksAdapter videoLifecycleCallbacks =
+      new VideoLifecycleCallbacksAdapter();
 
   static class Builder {
     @Nullable private AdInstanceManager manager;
@@ -268,8 +274,15 @@ class FlutterNativeAd extends FlutterAd {
     nativeAd.setOnPaidEventListener(new FlutterPaidEventListener(manager, this));
     this.nativeAd = nativeAd;
     manager.onAdLoaded(adId, nativeAd.getResponseInfo());
+    @Nullable final VideoController videoController = getVideoController();
+    if (videoController != null) {
+      videoController.setVideoLifecycleCallbacks(videoLifecycleCallbacks);
+    }
   }
 
+  /**
+   * Returns whether the ad has video content.
+   */
   boolean hasVideoContent() {
     if (nativeAd == null) {
       return false;
@@ -281,6 +294,12 @@ class FlutterNativeAd extends FlutterAd {
     return mediaContent.hasVideoContent();
 
   }
+
+  /**
+   * Returns the {@link VideoController} associated with this ad. This is used to control video
+   * playback.
+   * @return the video controller associated with this ad, if it is not a video ad, then it returns `null`.
+   */
   @Nullable
   VideoController getVideoController() {
     if (nativeAd == null) {
@@ -293,6 +312,22 @@ class FlutterNativeAd extends FlutterAd {
     return mediaContent.getVideoController();
   }
 
+  /**
+   * Set the {@link VideoLifecycleCallbacks} associated with this ad. This is
+   * used to listen to video lifecycle events.
+   * @param callback the callback to be added to the list of callbacks.
+   */
+  void setVideoLifecycleCallback(@NonNull final VideoLifecycleCallbacks callback) {
+    videoLifecycleCallbacks.delegate = callback;
+  }
+
+  /**
+   * Removes the {@link VideoLifecycleCallbacks} associated with this ad.
+   */
+  void removeVideoLifecycleCallback() {
+      videoLifecycleCallbacks.delegate = null;
+  }
+
   @Override
   void dispose() {
     if (nativeAdView != null) {
@@ -303,6 +338,66 @@ class FlutterNativeAd extends FlutterAd {
       templateView.destroyNativeAd();
       templateView = null;
     }
+    videoLifecycleCallbacks.delegate = null;
+    final VideoController videoController = getVideoController();
+    if (videoController != null) {
+      videoController.setVideoLifecycleCallbacks(null);
+    }
     nativeAd = null;
+  }
+
+  static private class VideoLifecycleCallbacksAdapter extends VideoLifecycleCallbacks {
+    @Nullable
+    VideoLifecycleCallbacks delegate;
+
+    @Override
+    public void onVideoStart() {
+      if (delegate != null) {
+        delegate.onVideoStart();
+      }
+    }
+
+    @Override
+    public void onVideoPlay() {
+      if (delegate != null) {
+        delegate.onVideoPlay();
+      }
+    }
+
+    @Override
+    public void onVideoPause() {
+      if (delegate != null) {
+        delegate.onVideoPause();
+      }
+    }
+
+    @Override
+    public void onVideoEnd() {
+      if (delegate != null) {
+        delegate.onVideoEnd();
+      }
+    }
+
+    @Override
+    public void onVideoMute(final boolean isMuted) {
+      if (delegate != null) {
+        delegate.onVideoMute(isMuted);
+      }
+    }
+  }
+
+  enum VideoLifecycleEvent {
+    VIDEO_START("videoStart"),
+    VIDEO_PLAY("videoPlay"),
+    VIDEO_PAUSE("videoPause"),
+    VIDEO_END("videoEnd"),
+    VIDEO_MUTE("videoMute"),
+    VIDEO_UNMUTE("videoUnmute");
+
+    final String value;
+
+    VideoLifecycleEvent(@NonNull final String value) {
+      this.value = value;
+    }
   }
 }
