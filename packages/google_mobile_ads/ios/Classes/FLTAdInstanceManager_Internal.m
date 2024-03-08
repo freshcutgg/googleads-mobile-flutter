@@ -291,9 +291,8 @@ NSString * _Nonnull NSStringFromVideoLifecycleEvent(VideoLifecycleEvent value) {
         case VIDEO_UNMUTE:
             return @"videoUnmute";
         default:
-            return @"unknown";
-//            @throw [NSException exceptionWithName:@"InvalidVideoLifecycleEventException"
-//                                           reason:[NSString stringWithFormat:@"Unrecognized VideoLifecycleEvent: %ld", (long)value]
-//                                         userInfo:nil];
+            @throw [NSException exceptionWithName:@"InvalidVideoLifecycleEventException"
+                                           reason:[NSString stringWithFormat:@"Unrecognized VideoLifecycleEvent: %ld", (long)value]
+                                         userInfo:nil];
     }
 }
