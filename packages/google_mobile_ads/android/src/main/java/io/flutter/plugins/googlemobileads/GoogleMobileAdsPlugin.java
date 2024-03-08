@@ -657,7 +657,7 @@ public class GoogleMobileAdsPlugin implements FlutterPlugin, ActivityAware, Meth
         if (nativeAd1 == null) {
           result.error(
                   Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
-                  "Unexpected ad type for getAdSize: " + ad,
+                  "Unexpected ad type for isNativeAdCustomControlsEnabled: " + ad,
                   null);
         } else {
           result.success(nativeAd1.isCustomControlsEnabled());
@@ -671,7 +671,7 @@ public class GoogleMobileAdsPlugin implements FlutterPlugin, ActivityAware, Meth
         if (nativeAd1 == null) {
           result.error(
                   Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
-                  "Unexpected ad type for getAdSize: " + ad,
+                  "Unexpected ad type for nativeAdPlaybackPlay: " + ad,
                   null);
         } else {
           final VideoController videoController = nativeAd1.getVideoController();
@@ -694,7 +694,7 @@ public class GoogleMobileAdsPlugin implements FlutterPlugin, ActivityAware, Meth
         if (nativeAd1 == null) {
           result.error(
                   Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
-                  "Unexpected ad type for getAdSize: " + ad,
+                  "Unexpected ad type for nativeAdPlaybackPause: " + ad,
                   null);
         } else {
           final VideoController videoController = nativeAd1.getVideoController();
@@ -717,7 +717,7 @@ public class GoogleMobileAdsPlugin implements FlutterPlugin, ActivityAware, Meth
         if (nativeAd1 == null) {
           result.error(
                   Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
-                  "Unexpected ad type for getAdSize: " + ad,
+                  "Unexpected ad type for nativeAdPlaybackStop: " + ad,
                   null);
         } else {
           final VideoController videoController = nativeAd1.getVideoController();
@@ -740,7 +740,7 @@ public class GoogleMobileAdsPlugin implements FlutterPlugin, ActivityAware, Meth
         if (nativeAd1 == null) {
           result.error(
                   Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
-                  "Unexpected ad type for getAdSize: " + ad,
+                  "Unexpected ad type for nativeAdMute: " + ad,
                   null);
         } else {
           final VideoController videoController = nativeAd1.getVideoController();
@@ -763,7 +763,7 @@ public class GoogleMobileAdsPlugin implements FlutterPlugin, ActivityAware, Meth
         if (nativeAd1 == null) {
           result.error(
                   Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
-                  "Unexpected ad type for getAdSize: " + ad,
+                  "Unexpected ad type for isNativeAdPlaybackMuted: " + ad,
                   null);
         } else {
           final VideoController videoController = nativeAd1.getVideoController();
@@ -786,7 +786,7 @@ public class GoogleMobileAdsPlugin implements FlutterPlugin, ActivityAware, Meth
         if (nativeAd1 == null) {
           result.error(
                   Constants.ERROR_CODE_UNEXPECTED_AD_TYPE,
-                  "Unexpected ad type for getAdSize: " + ad,
+                  "Unexpected ad type for hasNativeAdVideoContent: " + ad,
                   null);
         } else {
           final boolean hasVideoContent = nativeAd1.hasVideoContent();

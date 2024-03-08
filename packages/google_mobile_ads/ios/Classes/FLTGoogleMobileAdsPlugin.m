@@ -571,7 +571,7 @@
           } else {
               result([FlutterError
                   errorWithCode:@"InvalidRequest"
-                        message:@"Video controller is null."
+                        message:@"VideoController is null."
                         details:nil]);
           }
       } else {
@@ -591,7 +591,7 @@
           } else {
               result([FlutterError
                   errorWithCode:@"InvalidRequest"
-                        message:@"Video controller is null."
+                        message:@"VideoController is null."
                         details:nil]);
           }
       } else {
@@ -611,7 +611,7 @@
           } else {
               result([FlutterError
                   errorWithCode:@"InvalidRequest"
-                        message:@"Video controller is null."
+                        message:@"VideoController is null."
                         details:nil]);
           }
       } else {
@@ -632,7 +632,7 @@
           } else {
               result([FlutterError
                   errorWithCode:@"InvalidRequest"
-                        message:@"Video controller is null."
+                        message:@"VideoController is null."
                         details:nil]);
           }
       } else {
@@ -652,7 +652,7 @@
           } else {
               result([FlutterError
                   errorWithCode:@"InvalidRequest"
-                        message:@"Video controller is null."
+                        message:@"VideoController is null."
                         details:nil]);
           }
       } else {
@@ -672,7 +672,7 @@
           } else {
               result([FlutterError
                   errorWithCode:@"InvalidRequest"
-                        message:@"Video controller is null."
+                        message:@"MediaContent is null."
                         details:nil]);
           }
       } else {

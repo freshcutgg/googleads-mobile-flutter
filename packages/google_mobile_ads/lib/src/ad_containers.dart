@@ -1038,7 +1038,7 @@ abstract class NativeAdVideoEventUtils {
 }
 
 /// Utility class for converting between [NativeAdVideoEvent] and its
-/// corresponding int value.
+/// corresponding String value.
 abstract class AdVideoEventUtil {
   /// Converts a [NativeAdVideoEvent] to its corresponding int value.
   static String toValue(final NativeAdVideoEvent event) {
@@ -1056,7 +1056,7 @@ abstract class AdVideoEventUtil {
       case NativeAdVideoEvent.unmute:
         return 'videoUnmute';
       default:
-        throw ArgumentError('Unknown AdVideoEvent value: $event');
+        throw ArgumentError('Unknown NativeAdVideoEvent value: $event');
     }
   }
 
@@ -1076,7 +1076,7 @@ abstract class AdVideoEventUtil {
       case 'videoUnmute':
         return NativeAdVideoEvent.unmute;
       default:
-        throw ArgumentError('Unknown AdVideoEvent value: $value');
+        throw ArgumentError('Unknown NativeAdVideoEvent value: $value');
     }
   }
 }
@@ -1173,6 +1173,8 @@ class NativeAd extends AdWithView implements VideoController {
   final StreamController<NativeAdVideoEvent> _videoEventController =
       StreamController<NativeAdVideoEvent>.broadcast();
 
+  bool _isStartEmitted = false;
+
   @override
   Future<bool> get isCustomControlsEnabled async =>
       await instanceManager.isCustomControlsEnabled(this) ?? false;
@@ -1182,15 +1184,12 @@ class NativeAd extends AdWithView implements VideoController {
       await instanceManager.isPlaybackMuted(this) ?? false;
 
   @override
-  Future<bool> get hasVideoContent async {
-    return await instanceManager.hasVideoContent(this) ?? false;
-  }
+  Future<bool> get hasVideoContent async =>
+      await instanceManager.hasVideoContent(this) ?? false;
 
   @override
-  Stream<NativeAdVideoEvent> get adVideoEventStream {
-    // if (defaultTargetPlatform == TargetPlatform.iOS) {
-    return _videoEventController.stream;
-  }
+  Stream<NativeAdVideoEvent> get adVideoEventStream =>
+      _videoEventController.stream;
 
   @override
   Future<void> dispose() async {
@@ -1222,15 +1221,13 @@ class NativeAd extends AdWithView implements VideoController {
 
   @override
   Future<void> pause() async {
-    return await instanceManager.pause(this);
+    await instanceManager.pause(this);
   }
 
   @override
   Future<void> stop() async {
     await instanceManager.stop(this);
   }
-
-  bool _isStartEmitted = false;
 
   void _init() {
     _videoEventSubscription =

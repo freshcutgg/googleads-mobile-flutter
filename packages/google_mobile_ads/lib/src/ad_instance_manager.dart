@@ -160,20 +160,10 @@ class AdInstanceManager {
         _invokeFluidAdHeightChanged(ad, arguments);
         break;
       case 'videoStart':
-        nativeAdVideoEventStreamController.add(arguments);
-        break;
       case 'videoPlay':
-        nativeAdVideoEventStreamController.add(arguments);
-        break;
       case 'videoPause':
-        nativeAdVideoEventStreamController.add(arguments);
-        break;
       case 'videoEnd':
-        nativeAdVideoEventStreamController.add(arguments);
-        break;
       case 'videoMute':
-        nativeAdVideoEventStreamController.add(arguments);
-        break;
       case 'videoUnmute':
         nativeAdVideoEventStreamController.add(arguments);
         break;
@@ -226,20 +216,10 @@ class AdInstanceManager {
         _invokeOnAdClicked(ad, eventName);
         break;
       case 'videoStart':
-        nativeAdVideoEventStreamController.add(arguments);
-        break;
       case 'videoPlay':
-        nativeAdVideoEventStreamController.add(arguments);
-        break;
       case 'videoPause':
-        nativeAdVideoEventStreamController.add(arguments);
-        break;
       case 'videoEnd':
-        nativeAdVideoEventStreamController.add(arguments);
-        break;
       case 'videoMute':
-        nativeAdVideoEventStreamController.add(arguments);
-        break;
       case 'videoUnmute':
         nativeAdVideoEventStreamController.add(arguments);
         break;
