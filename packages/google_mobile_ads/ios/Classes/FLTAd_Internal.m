@@ -1100,6 +1100,10 @@
 
 #pragma mark - FLTNativeAd
 
+@interface FLTNativeAd ()
+@property (weak, nonatomic, nullable) GADNativeAd *nativeAdWeakRef;
+@end
+
 @implementation FLTNativeAd {
   NSString *_adUnitId;
   FLTAdRequest *_adRequest;
@@ -1187,12 +1191,39 @@
                                             precision:(NSInteger)value.precision
                                          currencyCode:value.currencyCode]];
   };
+  self.nativeAdWeakRef = nativeAd;
+  GADVideoController* videoController = [self getVideoController];
+  if (videoController != nil) {
+      videoController.delegate = self;
+  }
   [manager onAdLoaded:self responseInfo:nativeAd.responseInfo];
 }
 
 - (void)adLoader:(GADAdLoader *)adLoader
     didFailToReceiveAdWithError:(NSError *)error {
   [manager onAdFailedToLoad:self error:error];
+}
+
+#pragma mark - GADVideoControllerDelegate
+
+- (void)videoControllerDidPlayVideo:(nonnull GADVideoController *)videoController {
+    [manager adDidPlayVideo:self];
+}
+
+- (void)videoControllerDidPauseVideo:(nonnull GADVideoController *)videoController {
+    [manager adDidPauseVideo:self];
+}
+
+- (void)videoControllerDidEndVideoPlayback:(nonnull GADVideoController *)videoController {
+    [manager adDidEndVideoPlayback:self];
+}
+
+- (void)videoControllerDidMuteVideo:(nonnull GADVideoController *)videoController {
+    [manager adDidMuteVideo:self];
+}
+
+- (void)videoControllerDidUnmuteVideo:(nonnull GADVideoController *)videoController {
+    [manager adDidUnmuteVideo:self];
 }
 
 #pragma mark - GADNativeAdDelegate
@@ -1220,6 +1251,34 @@
 #pragma mark - FlutterPlatformView
 - (UIView *)view {
   return _view;
+}
+
+- (BOOL)isCustomControlsEnabled {
+    if (_nativeAdOptions == nil || _nativeAdOptions.videoOptions == nil || _nativeAdOptions.videoOptions.customControlsRequested == nil) {
+        return NO;
+    }
+    return _nativeAdOptions.videoOptions.customControlsRequested.boolValue;
+}
+
+- (GADVideoController *_Nullable)getVideoController {
+    GADMediaContent* mediaContent = [self getMediaContent];
+    if (mediaContent != nil) {
+        GADVideoController* videoController = mediaContent.videoController;
+        if (videoController != nil) {
+            return videoController;
+        }
+    }
+    return nil;
+}
+
+- (GADMediaContent *_Nullable)getMediaContent {
+    if (self.nativeAdWeakRef) {
+        GADMediaContent* mediaContent = self.nativeAdWeakRef.mediaContent;
+          if (mediaContent != nil) {
+              return mediaContent;
+          }
+    }
+    return nil;
 }
 
 @synthesize manager;

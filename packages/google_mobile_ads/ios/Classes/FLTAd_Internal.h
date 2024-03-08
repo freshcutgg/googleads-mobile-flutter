@@ -298,7 +298,7 @@
 
 @interface FLTNativeAd
     : FLTBaseAd <FLTAd, FlutterPlatformView, GADNativeAdDelegate,
-                 GADNativeAdLoaderDelegate>
+                 GADNativeAdLoaderDelegate, GADVideoControllerDelegate>
 - (instancetype _Nonnull)
        initWithAdUnitId:(NSString *_Nonnull)adUnitId
                 request:(FLTAdRequest *_Nonnull)request
@@ -309,6 +309,9 @@
         nativeAdOptions:(FLTNativeAdOptions *_Nullable)nativeAdOptions
     nativeTemplateStyle:(FLTNativeTemplateStyle *_Nullable)nativeTemplateStyle;
 - (GADAdLoader *_Nonnull)adLoader;
+- (BOOL)isCustomControlsEnabled;
+- (GADVideoController *_Nullable)getVideoController;
+- (GADMediaContent *_Nullable)getMediaContent;
 @end
 
 @interface FLTRewardItem : NSObject

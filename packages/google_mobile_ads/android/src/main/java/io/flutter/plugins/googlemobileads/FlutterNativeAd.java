@@ -18,18 +18,24 @@ import android.content.Context;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.google.android.ads.nativetemplates.TemplateView;
 import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.MediaContent;
+import com.google.android.gms.ads.VideoController;
+import com.google.android.gms.ads.VideoController.VideoLifecycleCallbacks;
 import com.google.android.gms.ads.admanager.AdManagerAdRequest;
 import com.google.android.gms.ads.nativead.NativeAd;
 import com.google.android.gms.ads.nativead.NativeAd.OnNativeAdLoadedListener;
 import com.google.android.gms.ads.nativead.NativeAdOptions;
 import com.google.android.gms.ads.nativead.NativeAdView;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+
+import java.util.Map;
+
 import io.flutter.plugin.platform.PlatformView;
 import io.flutter.plugins.googlemobileads.GoogleMobileAdsPlugin.NativeAdFactory;
 import io.flutter.plugins.googlemobileads.nativetemplates.FlutterNativeTemplateStyle;
-import java.util.Map;
 
 /** A wrapper for {@link NativeAd}. */
 class FlutterNativeAd extends FlutterAd {
@@ -43,10 +49,13 @@ class FlutterNativeAd extends FlutterAd {
   @Nullable private FlutterAdManagerAdRequest adManagerRequest;
   @Nullable private Map<String, Object> customOptions;
   @Nullable private NativeAdView nativeAdView;
+  @Nullable private NativeAd nativeAd;
   @Nullable private final FlutterNativeAdOptions nativeAdOptions;
   @Nullable private final FlutterNativeTemplateStyle nativeTemplateStyle;
   @Nullable private TemplateView templateView;
   @NonNull private final Context context;
+  @NonNull private final VideoLifecycleCallbacksImpl videoLifecycleCallbacks =
+      new VideoLifecycleCallbacksImpl();
 
   static class Builder {
     @Nullable private AdInstanceManager manager;
@@ -215,6 +224,13 @@ class FlutterNativeAd extends FlutterAd {
     this.nativeTemplateStyle = nativeTemplateStyle;
   }
 
+  boolean isCustomControlsEnabled() {
+    return nativeAdOptions != null && nativeAdOptions.videoOptions != null
+            && nativeAdOptions.videoOptions.customControlsRequested != null
+        ? nativeAdOptions.videoOptions.customControlsRequested
+        : false;
+  }
+
   @Override
   void load() {
     final OnNativeAdLoadedListener loadedListener = new FlutterNativeAdLoadedListener(this);
@@ -256,7 +272,44 @@ class FlutterNativeAd extends FlutterAd {
       nativeAdView = adFactory.createNativeAd(nativeAd, customOptions);
     }
     nativeAd.setOnPaidEventListener(new FlutterPaidEventListener(manager, this));
+    this.nativeAd = nativeAd;
     manager.onAdLoaded(adId, nativeAd.getResponseInfo());
+    @Nullable final VideoController videoController = getVideoController();
+    if (videoController != null) {
+      videoController.setVideoLifecycleCallbacks(videoLifecycleCallbacks);
+    }
+  }
+
+  /**
+   * Returns whether the ad has video content.
+   */
+  boolean hasVideoContent() {
+    if (nativeAd == null) {
+      return false;
+    }
+    final MediaContent mediaContent = nativeAd.getMediaContent();
+    if (mediaContent == null) {
+      return false;
+    }
+    return mediaContent.hasVideoContent();
+
+  }
+
+  /**
+   * Returns the {@link VideoController} associated with this ad. This is used to control video
+   * playback.
+   * @return the video controller associated with this ad, if it is not a video ad, then it returns `null`.
+   */
+  @Nullable
+  VideoController getVideoController() {
+    if (nativeAd == null) {
+      return null;
+    }
+    final MediaContent mediaContent = nativeAd.getMediaContent();
+    if (mediaContent == null) {
+      return null;
+    }
+    return mediaContent.getVideoController();
   }
 
   @Override
@@ -268,6 +321,58 @@ class FlutterNativeAd extends FlutterAd {
     if (templateView != null) {
       templateView.destroyNativeAd();
       templateView = null;
+    }
+    final VideoController videoController = getVideoController();
+    if (videoController != null) {
+      videoController.setVideoLifecycleCallbacks(null);
+    }
+    nativeAd = null;
+  }
+
+  private class VideoLifecycleCallbacksImpl extends VideoLifecycleCallbacks {
+    @Override
+    public void onVideoStart() {
+      manager.onNativeAdStartVideo(FlutterNativeAd.this);
+    }
+
+    @Override
+    public void onVideoPlay() {
+      manager.onNativeAdPlayVideo(FlutterNativeAd.this);
+    }
+
+    @Override
+    public void onVideoPause() {
+      manager.onNativeAdPauseVideo(FlutterNativeAd.this);
+    }
+
+    @Override
+    public void onVideoEnd() {
+      manager.onNativeAdEndVideo(FlutterNativeAd.this);
+    }
+
+    @Override
+    public void onVideoMute(final boolean isMuted) {
+      if (isMuted) {
+        manager.onNativeAdMuteVideo(FlutterNativeAd.this);
+      } else {
+        manager.onNativeAdUnMuteVideo(FlutterNativeAd.this);
+      }
+
+    }
+  }
+
+  enum VideoLifecycleEvent {
+    VIDEO_START("videoStart"),
+    VIDEO_PLAY("videoPlay"),
+    VIDEO_PAUSE("videoPause"),
+    VIDEO_END("videoEnd"),
+    VIDEO_MUTE("videoMute"),
+    VIDEO_UNMUTE("videoUnmute");
+
+    final String value;
+
+    VideoLifecycleEvent(@NonNull final String value) {
+      this.value = value;
     }
   }
 }

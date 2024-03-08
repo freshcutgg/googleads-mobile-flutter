@@ -19,13 +19,17 @@ import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.ResponseInfo;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugins.googlemobileads.FlutterAd.FlutterAdError;
 import io.flutter.plugins.googlemobileads.FlutterAd.FlutterResponseInfo;
-import java.util.HashMap;
-import java.util.Map;
+import io.flutter.plugins.googlemobileads.FlutterNativeAd.VideoLifecycleEvent;
 
 /**
  * Maintains reference to ad instances for the {@link
@@ -44,7 +48,7 @@ class AdInstanceManager {
    * Initializes the ad instance manager. We only need a method channel to start loading ads, but an
    * activity must be present in order to attach any ads to the view hierarchy.
    */
-  AdInstanceManager(@NonNull MethodChannel channel) {
+  AdInstanceManager(@NonNull final MethodChannel channel) {
     this.channel = channel;
     this.ads = new HashMap<>();
   }
@@ -217,6 +221,48 @@ class AdInstanceManager {
     arguments.put("adId", adId);
     arguments.put("eventName", "onFluidAdHeightChanged");
     arguments.put("height", height);
+    invokeOnAdEvent(arguments);
+  }
+
+  void onNativeAdStartVideo(@NonNull final FlutterNativeAd ad) {
+    final Map<Object, Object> arguments = new HashMap<>();
+    arguments.put("adId", adIdFor(ad));
+    arguments.put("eventName", VideoLifecycleEvent.VIDEO_START.value);
+    invokeOnAdEvent(arguments);
+  }
+
+  void onNativeAdPlayVideo(@NonNull final FlutterNativeAd ad) {
+    final Map<Object, Object> arguments = new HashMap<>();
+    arguments.put("adId", adIdFor(ad));
+    arguments.put("eventName", VideoLifecycleEvent.VIDEO_PLAY.value);
+    invokeOnAdEvent(arguments);
+  }
+
+  void onNativeAdPauseVideo(@NonNull final FlutterNativeAd ad) {
+    final Map<Object, Object> arguments = new HashMap<>();
+    arguments.put("adId", adIdFor(ad));
+    arguments.put("eventName", VideoLifecycleEvent.VIDEO_PAUSE.value);
+    invokeOnAdEvent(arguments);
+  }
+
+  void onNativeAdEndVideo(@NonNull final FlutterNativeAd ad) {
+    final Map<Object, Object> arguments = new HashMap<>();
+    arguments.put("adId", adIdFor(ad));
+    arguments.put("eventName", VideoLifecycleEvent.VIDEO_END.value);
+    invokeOnAdEvent(arguments);
+  }
+
+  void onNativeAdMuteVideo(@NonNull final FlutterNativeAd ad) {
+    final Map<Object, Object> arguments = new HashMap<>();
+    arguments.put("adId", adIdFor(ad));
+    arguments.put("eventName", VideoLifecycleEvent.VIDEO_MUTE.value);
+    invokeOnAdEvent(arguments);
+  }
+
+  void onNativeAdUnMuteVideo(@NonNull final FlutterNativeAd ad) {
+    final Map<Object, Object> arguments = new HashMap<>();
+    arguments.put("adId", adIdFor(ad));
+    arguments.put("eventName", VideoLifecycleEvent.VIDEO_UNMUTE.value);
     invokeOnAdEvent(arguments);
   }
 

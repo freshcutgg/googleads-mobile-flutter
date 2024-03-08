@@ -958,6 +958,129 @@ class AdManagerBannerAd extends AdWithView {
   }
 }
 
+/// An object that provides playback control for [NativeAd] video ads.
+abstract class VideoController {
+  /// Returns true if the video ad is using custom player controls. If custom
+  /// player controls are used, then it is the app's responsibility to render
+  /// provide play/pause and mute/unmute controls and call play(), pause(),
+  /// and mute(boolean) at the appropriate times.
+  Future<bool> get isCustomControlsEnabled;
+
+  /// Returns true if the video is currently muted, false otherwise.
+  Future<bool> get isMuted;
+
+  /// Returns true if the current ad has video content.
+  Future<bool> get hasVideoContent;
+
+  /// Stream of video playback events.
+  Stream<NativeAdVideoEvent> get adVideoEventStream;
+
+  /// Sets the video mute state.
+  /// This video control method only works when [isCustomControlsEnabled]
+  /// returns true.
+  /// `mute` - `true` if video should be muted, `false` for un-muted.
+  Future<void> mute(bool mute);
+
+  /// Play the video ad if applicable. This method is a no-op if the video is
+  /// already playing or the video has ended.
+  /// This video control method only works when [isCustomControlsEnabled]
+  /// returns true.
+  Future<void> play();
+
+  /// Pauses the video ad if applicable. This method is a no-op if the video is
+  /// already paused or the video has ended.
+  /// This video control method only works when [isCustomControlsEnabled]
+  /// returns true.
+  Future<void> pause();
+
+  /// Stops video playback. Subsequent calls to play() will resume at the
+  /// beginning of the video. This method is a no-op if the video has already
+  /// been stopped.
+  /// The ad unit must be in the allow list to be able to use this api. If you
+  /// are interested in using this feature, reach out to your account manager.
+  Future<void> stop();
+}
+
+/// Represents video playback events for a [NativeAd], emitted by
+/// `VideoLifecycleCallbacks` on the platform side.
+enum NativeAdVideoEvent {
+  /// Corresponds to `VideoLifecycleCallbacks.onVideoStart` on native platforms.
+  start,
+
+  /// Corresponds to `VideoLifecycleCallbacks.onVideoPlay` on native platforms.
+  play,
+
+  /// Corresponds to `VideoLifecycleCallbacks.onVideoPause` on native platforms.
+  pause,
+
+  /// Corresponds to `VideoLifecycleCallbacks.onVideoEnd` on native platforms.
+  end,
+
+  /// Corresponds to `VideoLifecycleCallbacks.onVideoMute` (true) on native
+  /// platforms.
+  mute,
+
+  /// Corresponds to `VideoLifecycleCallbacks.onVideoMute` (false) on native
+  /// platforms.
+  unmute,
+}
+
+/// An utility class for [NativeAdVideoEvent].
+abstract class NativeAdVideoEventUtils {
+  NativeAdVideoEventUtils._();
+
+  /// Returns true if the given [NativeAdVideoEvent] is a playback event.
+  static bool isPlaybackEvent(final NativeAdVideoEvent event) =>
+      event == NativeAdVideoEvent.start ||
+      event == NativeAdVideoEvent.play ||
+      event == NativeAdVideoEvent.pause ||
+      event == NativeAdVideoEvent.end;
+}
+
+/// Utility class for converting between [NativeAdVideoEvent] and its
+/// corresponding String value.
+abstract class AdVideoEventUtil {
+  /// Converts a [NativeAdVideoEvent] to its corresponding int value.
+  static String toValue(final NativeAdVideoEvent event) {
+    switch (event) {
+      case NativeAdVideoEvent.start:
+        return 'videoStart';
+      case NativeAdVideoEvent.play:
+        return 'videoPlay';
+      case NativeAdVideoEvent.pause:
+        return 'videoPause';
+      case NativeAdVideoEvent.end:
+        return 'videoEnd';
+      case NativeAdVideoEvent.mute:
+        return 'videoMute';
+      case NativeAdVideoEvent.unmute:
+        return 'videoUnmute';
+      default:
+        throw ArgumentError('Unknown NativeAdVideoEvent value: $event');
+    }
+  }
+
+  /// Converts an int value to its corresponding [NativeAdVideoEvent].
+  static NativeAdVideoEvent fromValue(final String value) {
+    switch (value) {
+      case 'videoStart':
+        return NativeAdVideoEvent.start;
+      case 'videoPlay':
+        return NativeAdVideoEvent.play;
+      case 'videoPause':
+        return NativeAdVideoEvent.pause;
+      case 'videoEnd':
+        return NativeAdVideoEvent.end;
+      case 'videoMute':
+        return NativeAdVideoEvent.mute;
+      case 'videoUnmute':
+        return NativeAdVideoEvent.unmute;
+      default:
+        throw ArgumentError('Unknown NativeAdVideoEvent value: $value');
+    }
+  }
+}
+
 /// A NativeAd.
 ///
 /// Native ads are ad assets that are presented to users via UI components that
@@ -978,7 +1101,7 @@ class AdManagerBannerAd extends AdWithView {
 ///
 /// To display this ad, instantiate an [AdWidget] with this as a parameter after
 /// calling [load].
-class NativeAd extends AdWithView {
+class NativeAd extends AdWithView implements VideoController {
   /// Creates a [NativeAd].
   ///
   /// A valid [adUnitId], nonnull [listener], nonnull [request], and either
@@ -1045,9 +1168,91 @@ class NativeAd extends AdWithView {
   /// used to render the native ad.
   final NativeTemplateStyle? nativeTemplateStyle;
 
+  StreamSubscription<NativeAdVideoEvent>? _videoEventSubscription;
+
+  final StreamController<NativeAdVideoEvent> _videoEventController =
+      StreamController<NativeAdVideoEvent>.broadcast();
+
+  bool _isStartEmitted = false;
+
+  @override
+  Future<bool> get isCustomControlsEnabled async =>
+      await instanceManager.isCustomControlsEnabled(this) ?? false;
+
+  @override
+  Future<bool> get isMuted async =>
+      await instanceManager.isPlaybackMuted(this) ?? false;
+
+  @override
+  Future<bool> get hasVideoContent async =>
+      await instanceManager.hasVideoContent(this) ?? false;
+
+  @override
+  Stream<NativeAdVideoEvent> get adVideoEventStream =>
+      _videoEventController.stream;
+
+  @override
+  Future<void> dispose() async {
+    await Future.wait(
+      [
+        _videoEventSubscription?.cancel() ?? Future.value(),
+        _videoEventController.close(),
+        super.dispose(),
+      ],
+    );
+  }
+
   @override
   Future<void> load() async {
-    await instanceManager.loadNativeAd(this);
+    final task = instanceManager.loadNativeAd(this);
+    _init();
+    await task;
+  }
+
+  @override
+  Future<void> mute(final bool mute) async {
+    await instanceManager.mute(this, mute);
+  }
+
+  @override
+  Future<void> play() async {
+    await instanceManager.play(this);
+  }
+
+  @override
+  Future<void> pause() async {
+    await instanceManager.pause(this);
+  }
+
+  @override
+  Future<void> stop() async {
+    await instanceManager.stop(this);
+  }
+
+  void _init() {
+    _videoEventSubscription =
+        instanceManager.listenNativeAdVideoEvent(this).listen((event) {
+      if (!_videoEventController.isClosed) {
+        if (event == NativeAdVideoEvent.start) {
+          // it doesn't work for iOS.
+          _isStartEmitted = true;
+          _videoEventController.add(event);
+          return;
+        } else if (event == NativeAdVideoEvent.end) {
+          _isStartEmitted = false;
+        } else if (event == NativeAdVideoEvent.play && !_isStartEmitted) {
+          // workaround for iOS to align with Android behavior, because on iOS
+          // the NativeAdVideoEvent.start isn't emitted.
+          _isStartEmitted = true;
+          _videoEventController.add(NativeAdVideoEvent.start);
+        }
+        _videoEventController.add(event);
+      }
+    }, onError: (Object error, StackTrace stackTrace) {
+      if (!_videoEventController.isClosed) {
+        _videoEventController.addError(error, stackTrace);
+      }
+    });
   }
 }
 

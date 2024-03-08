@@ -195,6 +195,26 @@
   [self sendAdEvent:@"adDidRecordClick" ad:ad];
 }
 
+- (void)adDidPlayVideo:(id<FLTAd> _Nonnull)ad {
+  [self sendAdEvent:NSStringFromVideoLifecycleEvent(VIDEO_PLAY) ad:ad];
+}
+
+- (void)adDidPauseVideo:(id<FLTAd> _Nonnull)ad {
+  [self sendAdEvent:NSStringFromVideoLifecycleEvent(VIDEO_PAUSE) ad:ad];
+}
+
+- (void)adDidEndVideoPlayback:(id<FLTAd> _Nonnull)ad {
+  [self sendAdEvent:NSStringFromVideoLifecycleEvent(VIDEO_END) ad:ad];
+}
+
+- (void)adDidMuteVideo:(id<FLTAd> _Nonnull)ad {
+  [self sendAdEvent:NSStringFromVideoLifecycleEvent(VIDEO_MUTE) ad:ad];
+}
+
+- (void)adDidUnmuteVideo:(id<FLTAd> _Nonnull)ad {
+  [self sendAdEvent:NSStringFromVideoLifecycleEvent(VIDEO_UNMUTE) ad:ad];
+}
+
 - (void)didFailToPresentFullScreenContentWithError:(id<FLTAd> _Nonnull)ad
                                              error:(NSError *_Nonnull)error {
   [_channel invokeMethod:@"onAdEvent"
@@ -257,3 +277,22 @@
   return [FlutterStandardMessageCodec sharedInstance];
 }
 @end
+
+NSString * _Nonnull NSStringFromVideoLifecycleEvent(VideoLifecycleEvent value) {
+    switch (value) {
+        case VIDEO_PLAY:
+            return @"videoPlay";
+        case VIDEO_PAUSE:
+            return @"videoPause";
+        case VIDEO_END:
+            return @"videoEnd";
+        case VIDEO_MUTE:
+            return @"videoMute";
+        case VIDEO_UNMUTE:
+            return @"videoUnmute";
+        default:
+            @throw [NSException exceptionWithName:@"InvalidVideoLifecycleEventException"
+                                           reason:[NSString stringWithFormat:@"Unrecognized VideoLifecycleEvent: %ld", (long)value]
+                                         userInfo:nil];
+    }
+}

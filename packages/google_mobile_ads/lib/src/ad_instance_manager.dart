@@ -74,6 +74,8 @@ class AdInstanceManager {
   /// Invokes load and dispose calls.
   final MethodChannel channel;
   final WebViewControllerUtil webViewControllerUtil;
+  final StreamController<Map<dynamic, dynamic>>
+      nativeAdVideoEventStreamController = StreamController.broadcast();
 
   void _onAdEvent(Ad ad, String eventName, Map<dynamic, dynamic> arguments) {
     if (defaultTargetPlatform == TargetPlatform.android) {
@@ -157,6 +159,14 @@ class AdInstanceManager {
       case 'onFluidAdHeightChanged':
         _invokeFluidAdHeightChanged(ad, arguments);
         break;
+      case 'videoStart':
+      case 'videoPlay':
+      case 'videoPause':
+      case 'videoEnd':
+      case 'videoMute':
+      case 'videoUnmute':
+        nativeAdVideoEventStreamController.add(arguments);
+        break;
       default:
         debugPrint('invalid ad event name: $eventName');
     }
@@ -204,6 +214,14 @@ class AdInstanceManager {
         break;
       case 'onAdClicked':
         _invokeOnAdClicked(ad, eventName);
+        break;
+      case 'videoStart':
+      case 'videoPlay':
+      case 'videoPause':
+      case 'videoEnd':
+      case 'videoMute':
+      case 'videoUnmute':
+        nativeAdVideoEventStreamController.add(arguments);
         break;
       default:
         debugPrint('invalid ad event name: $eventName');
@@ -830,6 +848,88 @@ class AdInstanceManager {
       listener(error);
     }
   }
+
+  Future<bool?> hasVideoContent(final NativeAd ad) async {
+    return await channel.invokeMethod<void>(
+      'hasNativeAdVideoContent',
+      <dynamic, dynamic>{
+        'adId': adIdFor(ad),
+      },
+    ) as bool?;
+  }
+
+  Future<bool?> isCustomControlsEnabled(final NativeAd ad) async =>
+      await channel.invokeMethod<void>(
+        'isNativeAdCustomControlsEnabled',
+        <dynamic, dynamic>{
+          'adId': adIdFor(ad),
+        },
+      ) as bool?;
+
+  Future<bool?> isPlaybackMuted(final NativeAd ad) async =>
+      await channel.invokeMethod<void>(
+        'isNativeAdPlaybackMuted',
+        <dynamic, dynamic>{
+          'adId': adIdFor(ad),
+        },
+      ) as bool?;
+
+  Future<void> mute(final NativeAd ad, final bool mute) async {
+    await channel.invokeMethod<void>(
+      'nativeAdMute',
+      <dynamic, dynamic>{
+        'adId': adIdFor(ad),
+        'mute': mute,
+      },
+    );
+  }
+
+  Future<void> play(final NativeAd ad) async {
+    await channel.invokeMethod<void>(
+      'nativeAdPlaybackPlay',
+      <dynamic, dynamic>{
+        'adId': adIdFor(ad),
+      },
+    );
+  }
+
+  Future<void> pause(final NativeAd ad) async {
+    await channel.invokeMethod<void>(
+      'nativeAdPlaybackPause',
+      <dynamic, dynamic>{
+        'adId': adIdFor(ad),
+      },
+    );
+  }
+
+  Future<void> stop(final NativeAd ad) async {
+    await channel.invokeMethod<void>(
+      'nativeAdPlaybackStop',
+      <dynamic, dynamic>{
+        'adId': adIdFor(ad),
+      },
+    );
+  }
+
+  Future<int?> getPlaybackState(final NativeAd ad) async =>
+      await channel.invokeMethod<void>(
+        'getNativeAdPlaybackState',
+        <dynamic, dynamic>{
+          'adId': adIdFor(ad),
+        },
+      ) as int?;
+
+  Stream<NativeAdVideoEvent> listenNativeAdVideoEvent(final NativeAd ad) =>
+      nativeAdVideoEventStreamController.stream
+          .where(
+            (event) =>
+                event['adId'] == adIdFor(ad) &&
+                event['eventName'] != null &&
+                event['eventName'] is String,
+          )
+          .map<NativeAdVideoEvent>(
+            (event) => AdVideoEventUtil.fromValue(event['eventName'] as String),
+          );
 }
 
 @visibleForTesting
