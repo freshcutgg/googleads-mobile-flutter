@@ -54,8 +54,8 @@ class FlutterNativeAd extends FlutterAd {
   @Nullable private final FlutterNativeTemplateStyle nativeTemplateStyle;
   @Nullable private TemplateView templateView;
   @NonNull private final Context context;
-  @NonNull private final VideoLifecycleCallbacksAdapter videoLifecycleCallbacks =
-      new VideoLifecycleCallbacksAdapter();
+  @NonNull private final VideoLifecycleCallbacksImpl videoLifecycleCallbacks =
+      new VideoLifecycleCallbacksImpl();
 
   static class Builder {
     @Nullable private AdInstanceManager manager;
@@ -312,22 +312,6 @@ class FlutterNativeAd extends FlutterAd {
     return mediaContent.getVideoController();
   }
 
-  /**
-   * Set the {@link VideoLifecycleCallbacks} associated with this ad. This is
-   * used to listen to video lifecycle events.
-   * @param callback the callback to be added to the list of callbacks.
-   */
-  void setVideoLifecycleCallback(@NonNull final VideoLifecycleCallbacks callback) {
-    videoLifecycleCallbacks.delegate = callback;
-  }
-
-  /**
-   * Removes the {@link VideoLifecycleCallbacks} associated with this ad.
-   */
-  void removeVideoLifecycleCallback() {
-      videoLifecycleCallbacks.delegate = null;
-  }
-
   @Override
   void dispose() {
     if (nativeAdView != null) {
@@ -338,7 +322,6 @@ class FlutterNativeAd extends FlutterAd {
       templateView.destroyNativeAd();
       templateView = null;
     }
-    videoLifecycleCallbacks.delegate = null;
     final VideoController videoController = getVideoController();
     if (videoController != null) {
       videoController.setVideoLifecycleCallbacks(null);
@@ -346,43 +329,35 @@ class FlutterNativeAd extends FlutterAd {
     nativeAd = null;
   }
 
-  static private class VideoLifecycleCallbacksAdapter extends VideoLifecycleCallbacks {
-    @Nullable
-    VideoLifecycleCallbacks delegate;
-
+  private class VideoLifecycleCallbacksImpl extends VideoLifecycleCallbacks {
     @Override
     public void onVideoStart() {
-      if (delegate != null) {
-        delegate.onVideoStart();
-      }
+      manager.onNativeAdStartVideo(FlutterNativeAd.this);
     }
 
     @Override
     public void onVideoPlay() {
-      if (delegate != null) {
-        delegate.onVideoPlay();
-      }
+      manager.onNativeAdPlayVideo(FlutterNativeAd.this);
     }
 
     @Override
     public void onVideoPause() {
-      if (delegate != null) {
-        delegate.onVideoPause();
-      }
+      manager.onNativeAdPauseVideo(FlutterNativeAd.this);
     }
 
     @Override
     public void onVideoEnd() {
-      if (delegate != null) {
-        delegate.onVideoEnd();
-      }
+      manager.onNativeAdEndVideo(FlutterNativeAd.this);
     }
 
     @Override
     public void onVideoMute(final boolean isMuted) {
-      if (delegate != null) {
-        delegate.onVideoMute(isMuted);
+      if (isMuted) {
+        manager.onNativeAdMuteVideo(FlutterNativeAd.this);
+      } else {
+        manager.onNativeAdUnMuteVideo(FlutterNativeAd.this);
       }
+
     }
   }
 
