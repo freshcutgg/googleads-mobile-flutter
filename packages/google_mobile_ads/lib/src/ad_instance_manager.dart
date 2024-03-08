@@ -940,16 +940,15 @@ class AdInstanceManager {
 
   Stream<NativeAdVideoEvent> listenNativeAdVideoEvent(final NativeAd ad) =>
       nativeAdVideoEventStreamController.stream
-          .where((event) =>
-              event['adId'] == adIdFor(ad) &&
-              event['eventName'] != null &&
-              event['eventName'] is String)
-          .map<NativeAdVideoEvent>((event) =>
-              AdVideoEventUtil.fromValue(event['eventName'] as String))
-          .map((dynamic event) {
-        print('Received event: $event');
-        return event;
-      });
+          .where(
+            (event) =>
+                event['adId'] == adIdFor(ad) &&
+                event['eventName'] != null &&
+                event['eventName'] is String,
+          )
+          .map<NativeAdVideoEvent>(
+            (event) => AdVideoEventUtil.fromValue(event['eventName'] as String),
+          );
 }
 
 @visibleForTesting

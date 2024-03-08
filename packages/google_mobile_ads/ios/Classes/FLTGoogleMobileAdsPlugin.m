@@ -548,6 +548,139 @@
             call.arguments[@"adId"]);
     }
     result(nil);
+  } else if ([call.method isEqualToString:@"isNativeAdCustomControlsEnabled"]) {
+      id<FLTAd> ad = [_manager adFor:call.arguments[@"adId"]];
+      if (ad != nil && [ad isKindOfClass:[FLTNativeAd class]]) {
+          FLTNativeAd *nativeAd = (FLTNativeAd *)ad;
+          BOOL isCustomControlsEnabled = [nativeAd isCustomControlsEnabled];
+          result(@(isCustomControlsEnabled));
+      } else {
+          result([FlutterError
+              errorWithCode:@"InvalidRequest"
+                    message:@"A null or invalid ad request was provided."
+                    details:nil]);
+      }
+  } else if ([call.method isEqualToString:@"nativeAdPlaybackPlay"]) {
+      id<FLTAd> ad = [_manager adFor:call.arguments[@"adId"]];
+      if (ad != nil && [ad isKindOfClass:[FLTNativeAd class]]) {
+          FLTNativeAd *nativeAd = (FLTNativeAd *)ad;
+          GADVideoController *videoController = [nativeAd getVideoController];
+          if (videoController != nil) {
+              [videoController play];
+              result(nil);
+          } else {
+              result([FlutterError
+                  errorWithCode:@"InvalidRequest"
+                        message:@"Video controller is null."
+                        details:nil]);
+          }
+      } else {
+          result([FlutterError
+              errorWithCode:@"InvalidRequest"
+                    message:@"A null or invalid ad request was provided."
+                    details:nil]);
+      }
+  } else if ([call.method isEqualToString:@"nativeAdPlaybackPause"]) {
+      id<FLTAd> ad = [_manager adFor:call.arguments[@"adId"]];
+      if (ad != nil && [ad isKindOfClass:[FLTNativeAd class]]) {
+          FLTNativeAd *nativeAd = (FLTNativeAd *)ad;
+          GADVideoController *videoController = [nativeAd getVideoController];
+          if (videoController != nil) {
+              [videoController pause];
+              result(nil);
+          } else {
+              result([FlutterError
+                  errorWithCode:@"InvalidRequest"
+                        message:@"Video controller is null."
+                        details:nil]);
+          }
+      } else {
+          result([FlutterError
+              errorWithCode:@"InvalidRequest"
+                    message:@"A null or invalid ad request was provided."
+                    details:nil]);
+      }
+  } else if ([call.method isEqualToString:@"nativeAdPlaybackStop"]) {
+      id<FLTAd> ad = [_manager adFor:call.arguments[@"adId"]];
+      if (ad != nil && [ad isKindOfClass:[FLTNativeAd class]]) {
+          FLTNativeAd *nativeAd = (FLTNativeAd *)ad;
+          GADVideoController *videoController = [nativeAd getVideoController];
+          if (videoController != nil) {
+              [videoController stop];
+              result(nil);
+          } else {
+              result([FlutterError
+                  errorWithCode:@"InvalidRequest"
+                        message:@"Video controller is null."
+                        details:nil]);
+          }
+      } else {
+          result([FlutterError
+              errorWithCode:@"InvalidRequest"
+                    message:@"A null or invalid ad request was provided."
+                    details:nil]);
+      }
+  } else if ([call.method isEqualToString:@"nativeAdMute"]) {
+      id<FLTAd> ad = [_manager adFor:call.arguments[@"adId"]];
+      if (ad != nil && [ad isKindOfClass:[FLTNativeAd class]]) {
+          FLTNativeAd *nativeAd = (FLTNativeAd *)ad;
+          GADVideoController *videoController = [nativeAd getVideoController];
+          if (videoController != nil) {
+              NSNumber *isMute = call.arguments[@"mute"];
+              [videoController setMute:isMute.boolValue];
+              result(nil);
+          } else {
+              result([FlutterError
+                  errorWithCode:@"InvalidRequest"
+                        message:@"Video controller is null."
+                        details:nil]);
+          }
+      } else {
+          result([FlutterError
+              errorWithCode:@"InvalidRequest"
+                    message:@"A null or invalid ad request was provided."
+                    details:nil]);
+      }
+  } else if ([call.method isEqualToString:@"isNativeAdPlaybackMuted"]) {
+      id<FLTAd> ad = [_manager adFor:call.arguments[@"adId"]];
+      if (ad != nil && [ad isKindOfClass:[FLTNativeAd class]]) {
+          FLTNativeAd *nativeAd = (FLTNativeAd *)ad;
+          GADVideoController *videoController = [nativeAd getVideoController];
+          if (videoController != nil) {
+              BOOL isMuted = [videoController isMuted];
+              result(@(isMuted));
+          } else {
+              result([FlutterError
+                  errorWithCode:@"InvalidRequest"
+                        message:@"Video controller is null."
+                        details:nil]);
+          }
+      } else {
+          result([FlutterError
+              errorWithCode:@"InvalidRequest"
+                    message:@"A null or invalid ad request was provided."
+                    details:nil]);
+      }
+  } else if ([call.method isEqualToString:@"hasNativeAdVideoContent"]) {
+      id<FLTAd> ad = [_manager adFor:call.arguments[@"adId"]];
+      if (ad != nil && [ad isKindOfClass:[FLTNativeAd class]]) {
+          FLTNativeAd *nativeAd = (FLTNativeAd *)ad;
+          GADMediaContent *mediaContent = [nativeAd getMediaContent];
+          if (mediaContent != nil) {
+              BOOL hasContent = [mediaContent hasVideoContent];
+              result(@(hasContent));
+          } else {
+              result([FlutterError
+                  errorWithCode:@"InvalidRequest"
+                        message:@"Video controller is null."
+                        details:nil]);
+          }
+      } else {
+          result([FlutterError
+              errorWithCode:@"InvalidRequest"
+                    message:@"A null or invalid ad request was provided."
+                    details:nil]);
+      }
   } else {
     result(FlutterMethodNotImplemented);
   }

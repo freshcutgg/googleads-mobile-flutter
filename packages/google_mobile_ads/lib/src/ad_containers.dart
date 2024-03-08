@@ -949,21 +949,6 @@ class AdManagerBannerAd extends AdWithView {
 
 /// An object that provides playback control for [NativeAd] video ads.
 abstract class VideoController {
-  /// Playback state is unknown.
-  static const playbackStateUnknown = 0;
-
-  /// Video playback is in progress.
-  static const playbackStatePlaying = 1;
-
-  /// Video playback is paused.
-  static const playbackStatePaused = 2;
-
-  /// Video playback is ended.
-  static const playbackStateEnded = 3;
-
-  /// Video playback is ready to play, stopped.
-  static const playbackStateReady = 5;
-
   /// Returns true if the video ad is using custom player controls. If custom
   /// player controls are used, then it is the app's responsibility to render
   /// provide play/pause and mute/unmute controls and call play(), pause(),
@@ -972,9 +957,6 @@ abstract class VideoController {
 
   /// Returns true if the video is currently muted, false otherwise.
   Future<bool> get isMuted;
-
-  /// see `playbackState*` constants in this class.
-  Future<int> get playbackState;
 
   /// Returns true if the current ad has video content.
   Future<bool> get hasVideoContent;
@@ -1008,25 +990,6 @@ abstract class VideoController {
   Future<void> stop();
 }
 
-/// Convenient utils for [VideoController].
-extension VideoControllerX on VideoController {
-  /// Returns true if the video is currently playing, false otherwise.
-  Future<bool> get isPlaying => playbackState
-      .then((state) => state == VideoController.playbackStatePlaying);
-
-  /// Returns true if the video is currently paused, false otherwise.
-  Future<bool> get isPaused => playbackState
-      .then((state) => state == VideoController.playbackStatePaused);
-
-  /// Returns true if the video has ended, false otherwise.
-  Future<bool> get isEnded => playbackState
-      .then((state) => state == VideoController.playbackStateEnded);
-
-  /// Returns true if the video is ready to play, false otherwise.
-  Future<bool> get isReady => playbackState
-      .then((state) => state == VideoController.playbackStateReady);
-}
-
 /// Represents video playback events for a [NativeAd], emitted by
 /// `VideoLifecycleCallbacks` on the platform side.
 enum NativeAdVideoEvent {
@@ -1049,6 +1012,18 @@ enum NativeAdVideoEvent {
   /// Corresponds to `VideoLifecycleCallbacks.onVideoMute` (false) on native
   /// platforms.
   unmute,
+}
+
+/// An utility class for [NativeAdVideoEvent].
+abstract class NativeAdVideoEventUtils {
+  NativeAdVideoEventUtils._();
+
+  /// Returns true if the given [NativeAdVideoEvent] is a playback event.
+  static bool isPlaybackEvent(final NativeAdVideoEvent event) =>
+      event == NativeAdVideoEvent.start ||
+      event == NativeAdVideoEvent.play ||
+      event == NativeAdVideoEvent.pause ||
+      event == NativeAdVideoEvent.end;
 }
 
 /// Utility class for converting between [NativeAdVideoEvent] and its
@@ -1196,20 +1171,15 @@ class NativeAd extends AdWithView implements VideoController {
       await instanceManager.isPlaybackMuted(this) ?? false;
 
   @override
-  Future<int> get playbackState async =>
-      await instanceManager.getPlaybackState(this) ?? 0;
-
-  @override
   Future<bool> get hasVideoContent async {
     return await instanceManager.hasVideoContent(this) ?? false;
   }
 
   @override
-  Stream<NativeAdVideoEvent> get adVideoEventStream =>
-      _videoEventController.stream.map((event) {
-        print('Received video event: $event');
-        return event;
-      });
+  Stream<NativeAdVideoEvent> get adVideoEventStream {
+    // if (defaultTargetPlatform == TargetPlatform.iOS) {
+    return _videoEventController.stream;
+  }
 
   @override
   Future<void> dispose() async {
@@ -1249,10 +1219,25 @@ class NativeAd extends AdWithView implements VideoController {
     await instanceManager.stop(this);
   }
 
+  bool _isStartEmitted = false;
+
   void _init() {
     _videoEventSubscription =
         instanceManager.listenNativeAdVideoEvent(this).listen((event) {
       if (!_videoEventController.isClosed) {
+        if (event == NativeAdVideoEvent.start) {
+          // it doesn't work for iOS.
+          _isStartEmitted = true;
+          _videoEventController.add(event);
+          return;
+        } else if (event == NativeAdVideoEvent.end) {
+          _isStartEmitted = false;
+        } else if (event == NativeAdVideoEvent.play && !_isStartEmitted) {
+          // workaround for iOS to align with Android behavior, because on iOS
+          // the NativeAdVideoEvent.start isn't emitted.
+          _isStartEmitted = true;
+          _videoEventController.add(NativeAdVideoEvent.start);
+        }
         _videoEventController.add(event);
       }
     }, onError: (Object error, StackTrace stackTrace) {

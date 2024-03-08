@@ -60,6 +60,12 @@
 - (void)adWillDismissFullScreenContent:(id<FLTAd> _Nonnull)ad;
 - (void)adDidRecordImpression:(id<FLTAd> _Nonnull)ad;
 - (void)adDidRecordClick:(id<FLTAd> _Nonnull)ad;
+
+- (void)adDidPlayVideo:(id<FLTAd> _Nonnull)ad;
+- (void)adDidPauseVideo:(id<FLTAd> _Nonnull)ad;
+- (void)adDidEndVideoPlayback:(id<FLTAd> _Nonnull)ad;
+- (void)adDidMuteVideo:(id<FLTAd> _Nonnull)ad;
+- (void)adDidUnmuteVideo:(id<FLTAd> _Nonnull)ad;
 - (void)didFailToPresentFullScreenContentWithError:(id<FLTAd> _Nonnull)ad
                                              error:(NSError *_Nonnull)error;
 - (void)onFluidAdHeightChanged:(id<FLTAd> _Nonnull)ad height:(CGFloat)height;
@@ -72,3 +78,13 @@
 - (instancetype _Nonnull)initWithManager:
     (FLTAdInstanceManager *_Nonnull)manager;
 @end
+
+typedef NS_ENUM(NSInteger, VideoLifecycleEvent) {
+    VIDEO_PLAY,
+    VIDEO_PAUSE,
+    VIDEO_END,
+    VIDEO_MUTE,
+    VIDEO_UNMUTE
+};
+
+NSString * _Nonnull NSStringFromVideoLifecycleEvent(VideoLifecycleEvent value);
