@@ -1254,6 +1254,13 @@
 }
 
 - (BOOL)isCustomControlsEnabled {
+    // we check in an actual video controller, if the Ads is loaded and it is a video ads.
+    GADVideoController* videoController = [self getVideoController];
+    if (videoController != nil) {
+        return videoController.customControlsEnabled;
+    }
+
+    // if the ads is still loading we can check if the ads request itself has the option enabled.
     if (_nativeAdOptions == nil || _nativeAdOptions.videoOptions == nil || _nativeAdOptions.videoOptions.customControlsRequested == nil) {
         return NO;
     }

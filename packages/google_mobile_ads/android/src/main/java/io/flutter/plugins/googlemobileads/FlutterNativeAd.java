@@ -225,6 +225,12 @@ class FlutterNativeAd extends FlutterAd {
   }
 
   boolean isCustomControlsEnabled() {
+    // we check in an actual video controller, if the Ads is loaded and it is a video ads.
+    final VideoController videoController = getVideoController();
+    if (videoController != null) {
+      return videoController.isCustomControlsEnabled();
+    }
+    // if the ads is still loading we can check if the ads request itself has the option enabled.
     return nativeAdOptions != null && nativeAdOptions.videoOptions != null
             && nativeAdOptions.videoOptions.customControlsRequested != null
         ? nativeAdOptions.videoOptions.customControlsRequested
